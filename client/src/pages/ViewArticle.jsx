@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import CommentsSection from '../components/CommentsSection'
 
-export default function ViewArticle({ onNavClick, articleId }) {
+export default function ViewArticle({ onNavClick, articleId, setCurrentViewArticle }) {
   const { token, user } = useAuth()
   const [article, setArticle] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -19,7 +19,10 @@ export default function ViewArticle({ onNavClick, articleId }) {
     if (!articleId) { onNavClick('/my-articles'); return }
     fetchArticle()
     fetchEngagement()
-    return () => { window.speechSynthesis.cancel() }
+    return () => {
+      window.speechSynthesis.cancel()
+      if (setCurrentViewArticle) setCurrentViewArticle(null)
+    }
   }, [articleId])
 
   const fetchArticle = async () => {
@@ -29,7 +32,10 @@ export default function ViewArticle({ onNavClick, articleId }) {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       const data = await res.json()
-      if (res.ok) setArticle(data)
+      if (res.ok) {
+        setArticle(data)
+        if (setCurrentViewArticle) setCurrentViewArticle(data)
+      }
     } catch (err) {
       console.error(err)
     }

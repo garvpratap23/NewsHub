@@ -3,39 +3,91 @@ const { auth } = require('../middleware');
 const News = require('../models/News');
 const router = express.Router();
 
+async function tryGroq(prompt, maxTokens = 1000) {
+    if (!process.env.GROQ_API_KEY) return null;
+    try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 15000);
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: 'llama-3.1-8b-instant',
+                messages: [{ role: 'user', content: prompt }],
+                max_tokens: maxTokens,
+                temperature: 0.8
+            }),
+            signal: controller.signal
+        });
+        clearTimeout(timeout);
+        if (!response.ok) {
+            console.error('Groq API error:', response.status);
+            return null;
+        }
+        const data = await response.json();
+        const content = data.choices?.[0]?.message?.content;
+        return content && content.trim() ? content.trim() : null;
+    } catch (err) {
+        console.error('Groq error:', err.message);
+        return null;
+    }
+}
+
+async function tryPerplexity(prompt, maxTokens = 4000) {
+    if (!process.env.PERPLEXITY_API_KEY) return null;
+    try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 20000);
+        const response = await fetch('https://api.perplexity.ai/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${process.env.PERPLEXITY_API_KEY}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: 'llama-3.1-sonar-small-128k-online',
+                messages: [{ role: 'user', content: prompt }],
+                max_tokens: maxTokens
+            }),
+            signal: controller.signal
+        });
+        clearTimeout(timeout);
+        if (!response.ok) {
+            console.error('Perplexity API error:', response.status);
+            return null;
+        }
+        const data = await response.json();
+        const content = data.choices?.[0]?.message?.content;
+        return content && content.trim() ? content.trim() : null;
+    } catch (err) {
+        console.error('Perplexity error:', err.message);
+        return null;
+    }
+}
+
+async function getAIResponse(prompt, maxTokens = 1000, preferPerplexity = false) {
+    let result = null;
+
+    if (preferPerplexity) {
+        result = await tryPerplexity(prompt, maxTokens);
+        if (!result) result = await tryGroq(prompt, maxTokens);
+    } else {
+        result = await tryGroq(prompt, maxTokens);
+        if (!result) result = await tryPerplexity(prompt, maxTokens);
+    }
+
+    return result;
+}
+
 async function callGroq(prompt, maxTokens = 1000) {
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            model: 'llama-3.1-8b-instant',
-            messages: [{ role: 'user', content: prompt }],
-            max_tokens: maxTokens,
-            temperature: 0.8
-        })
-    });
-    const data = await response.json();
-    return data.choices?.[0]?.message?.content || '';
+    return await getAIResponse(prompt, maxTokens, false);
 }
 
 async function callPerplexity(prompt, maxTokens = 4000) {
-    const response = await fetch('https://api.perplexity.ai/chat/completions', {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${process.env.PERPLEXITY_API_KEY}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            model: 'sonar',
-            messages: [{ role: 'user', content: prompt }],
-            max_tokens: maxTokens
-        })
-    });
-    const data = await response.json();
-    return data.choices?.[0]?.message?.content || '';
+    return await getAIResponse(prompt, maxTokens, true);
 }
 
 function parseJsonArray(text) {
@@ -58,7 +110,7 @@ Generate 3 improved, attention-grabbing, professional news headline alternatives
 Return ONLY a JSON array of 3 strings, nothing else. Example: ["Title 1", "Title 2", "Title 3"]`;
 
         const content = await callGroq(prompt, 300);
-        const titles = parseJsonArray(content);
+        const titles = content ? parseJsonArray(content) : [];
         res.json({ titles: titles.length > 0 ? titles : [title] });
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -94,7 +146,7 @@ Rules:
 - Output ONLY the enhanced article text, no preamble or meta-commentary`;
 
         const enhanced = await callGroq(prompt, 2000);
-        res.json({ content: enhanced });
+        res.json({ content: enhanced || content });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
@@ -119,7 +171,7 @@ The excerpt should:
 Return ONLY the excerpt text, nothing else.`;
 
         const excerpt = await callGroq(prompt, 200);
-        res.json({ excerpt: excerpt.replace(/^["']|["']$/g, '').trim() });
+        res.json({ excerpt: excerpt ? excerpt.replace(/^["']|["']$/g, '').trim() : content.substring(0, 150) + '...' });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
@@ -285,7 +337,7 @@ For each story provide:
 IMPORTANT: Return ONLY a valid JSON array with exactly 15 objects, each having "title", "excerpt", and "category" fields. No markdown, no explanation, just the JSON array.`;
 
         const content = await callPerplexity(prompt, 4000);
-        let articles = parseJsonArray(content);
+        let articles = content ? parseJsonArray(content) : [];
 
         // Ensure we have articles and format them properly
         const images = categoryImages[topic] || categoryImages.world;
@@ -319,7 +371,7 @@ router.get('/live-trending', async (req, res) => {
 Return ONLY a valid JSON array with 5 objects, each having "title", "views", and "comments" fields. No markdown, just JSON.`;
 
         const content = await callPerplexity(prompt, 1000);
-        let trending = parseJsonArray(content);
+        let trending = content ? parseJsonArray(content) : [];
 
         trending = trending.slice(0, 5).map((t, i) => ({
             id: i + 1,
@@ -342,10 +394,102 @@ router.get('/recommendations', auth, async (req, res) => {
             : `Give me 5 trending global news headlines right now. Format as JSON array with fields: title, excerpt, category.`;
 
         const content = await callPerplexity(prompt, 1000);
-        const recommendations = parseJsonArray(content);
+        const recommendations = content ? parseJsonArray(content) : [];
         res.json(recommendations.length > 0 ? recommendations : [{ title: 'Loading recommendations...', excerpt: 'Check back soon', category: 'general' }]);
     } catch (err) {
         res.status(500).json({ message: err.message });
+    }
+});
+
+router.post('/chat', async (req, res) => {
+    try {
+        const { message, context, language } = req.body;
+        if (!message) return res.status(400).json({ message: 'Message is required' });
+
+        const needsFactCheck = /correct|true|false|accurate|source|verify|real|fake|fact|proof|evidence|sources/i.test(message);
+        const needsSummary = /summarize|summary|tldr|brief|overview|what is this about|explain this/i.test(message);
+
+        const langNames = { en: 'English', es: 'Spanish', fr: 'French', de: 'German', hi: 'Hindi', zh: 'Chinese', ar: 'Arabic', pt: 'Portuguese', ja: 'Japanese', ru: 'Russian' };
+        const langInstruction = language && language !== 'en'
+            ? `CRITICAL: You must respond ONLY in ${langNames[language] || language}. Do not use English at all.`
+            : '';
+
+        let systemPrompt = `You are NewsHub Assistant, a smart and friendly AI helper for a news website.
+
+Your personality:
+- Helpful, informative, and conversational
+- Knowledgeable about current events and general topics
+- Clear and concise in your explanations
+- Never make up facts - if unsure, say so
+
+Guidelines:
+- Give direct, useful answers
+- When discussing articles, reference specific details from the content
+- For general questions, provide accurate information
+- Keep responses focused and readable (use bullet points for lists)
+${langInstruction}`;
+
+        if (context && context.title) {
+            systemPrompt += `
+
+CURRENT ARTICLE CONTEXT:
+========================
+Title: "${context.title}"
+Category: ${context.category || 'News'}
+Author: ${context.author || 'NewsHub Staff'}
+Published: ${context.date || 'Recently'}
+
+Full Article Content:
+${(context.content || context.excerpt || 'No content available').substring(0, 4000)}
+========================
+
+When the user asks about "this article" or "the article", refer to the above content.`;
+        }
+
+        let prompt;
+        let response;
+
+        if (needsSummary && context && context.title) {
+            prompt = `${systemPrompt}
+
+The user wants a summary. Provide a clear, well-structured summary of the article above. Include:
+- Main topic/headline
+- Key points (3-5 bullet points)
+- Why it matters
+
+User request: "${message}"`;
+            response = await callGroq(prompt, 800);
+        } else if (needsFactCheck && context && context.title) {
+            prompt = `${systemPrompt}
+
+The user wants to verify information. Analyze the article above for:
+- Accuracy of claims made
+- Any potential bias or missing context
+- What is verifiable vs. opinion
+
+User question: "${message}"
+
+Provide a balanced, factual assessment.`;
+            response = await callPerplexity(prompt, 1500);
+        } else {
+            prompt = `${systemPrompt}
+
+User: ${message}
+
+Respond naturally and helpfully. Be conversational but informative.`;
+            response = await callGroq(prompt, 600);
+        }
+
+        if (!response) {
+            response = context?.title
+                ? `I'm having trouble connecting right now. The article "${context.title}" is about ${context.category || 'current news'}. Please try your question again in a moment.`
+                : "I'm having a brief connection issue. Please try again in a moment!";
+        }
+
+        res.json({ reply: response });
+    } catch (err) {
+        console.error('Chat error:', err.message);
+        res.json({ reply: "Something went wrong on my end. Please try your question again!" });
     }
 });
 

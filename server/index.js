@@ -40,11 +40,16 @@ app.use('/api/engage', engageRoutes);
 app.get('/api/news', async (req, res) => {
     try {
         const { category } = req.query;
-        let query = {};
+        let query = { status: 'published' };
         if (category && category !== 'all') {
             query.category = category;
         }
-        const news = await News.find(query);
+        const news = await News.aggregate([
+            { $match: query },
+            { $addFields: { hasAuthor: { $cond: [{ $ifNull: ['$authorId', false] }, 1, 0] } } },
+            { $sort: { hasAuthor: -1, _id: -1 } },
+            { $project: { hasAuthor: 0 } }
+        ]);
         res.json(news);
     } catch (err) {
         res.status(500).json({ message: err.message });

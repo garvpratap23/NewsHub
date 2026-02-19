@@ -13,6 +13,7 @@ import Toast from './components/Toast'
 import ArticleModal from './components/ArticleModal'
 import WeatherWidget from './components/WeatherWidget'
 import PageTransition from './components/PageTransition'
+import Chatbot from './components/Chatbot'
 import HomePage from './pages/HomePage'
 import CategoryPage from './pages/CategoryPage'
 import LoginPage from './pages/LoginPage'
@@ -30,9 +31,9 @@ function EditArticleWrapper({ onNavClick, showToast }) {
   return <EditArticle onNavClick={onNavClick} showToast={showToast} articleId={id} />
 }
 
-function ViewArticleWrapper({ onNavClick }) {
+function ViewArticleWrapper({ onNavClick, setCurrentViewArticle }) {
   const { id } = useParams()
-  return <ViewArticle onNavClick={onNavClick} articleId={id} />
+  return <ViewArticle onNavClick={onNavClick} articleId={id} setCurrentViewArticle={setCurrentViewArticle} />
 }
 
 function AppContent() {
@@ -43,6 +44,7 @@ function AppContent() {
   const [toastMessage, setToastMessage] = useState('')
   const [toastVisible, setToastVisible] = useState(false)
   const [articleModalData, setArticleModalData] = useState(null)
+  const [currentViewArticle, setCurrentViewArticle] = useState(null)
   const [transitioning, setTransitioning] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [darkMode, setDarkMode] = useState(true)
@@ -146,7 +148,7 @@ function AppContent() {
         <Route path="/bookmarks" element={<BookmarksPage openArticle={openArticle} />} />
         <Route path="/dashboard" element={<AuthorDashboard onNavClick={handleNavClick} />} />
         <Route path="/edit/:id" element={<EditArticleWrapper onNavClick={handleNavClick} showToast={showToast} />} />
-        <Route path="/view/:id" element={<ViewArticleWrapper onNavClick={handleNavClick} />} />
+        <Route path="/view/:id" element={<ViewArticleWrapper onNavClick={handleNavClick} setCurrentViewArticle={setCurrentViewArticle} />} />
         <Route
           path="/:category"
           element={
@@ -164,6 +166,7 @@ function AppContent() {
       <Toast message={toastMessage} visible={toastVisible} />
       <ArticleModal data={articleModalData} onClose={closeArticle} showToast={showToast} />
       {!isAuthPage && !isSpecialPage && <WeatherWidget visible={weatherVisible} />}
+      {!isAuthPage && <Chatbot articleContext={articleModalData || currentViewArticle} />}
     </>
   )
 }
