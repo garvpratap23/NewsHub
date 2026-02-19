@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NewsHub | Breaking Stories</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <!-- Custom Cursor -->
+  <div class="cursor"></div>
+  <div class="cursor-follower"></div>
+
+  <!-- Page Transition -->
+  <div class="page-transition"></div>
+
+  <!-- Loader -->
+  <div class="loader">
+    <div class="loader-text">NewsHub</div>
+    <div class="loader-bar">
+      <div class="loader-progress"></div>
+    </div>
+  </div>
+
+  <!-- Scroll Progress -->
+  <div class="scroll-progress"></div>
+
+  <!-- Header -->
+  <header>
+    <nav>
+      <a href="#" class="logo magnetic">NewsHub</a>
+      <ul class="nav-links">
+        <li><a href="#" class="magnetic" data-page="home">Home</a></li>
+        <li><a href="#" class="magnetic" data-page="world">World</a></li>
+        <li><a href="#" class="magnetic" data-page="politics">Politics</a></li>
+        <li><a href="#" class="magnetic" data-page="technology">Technology</a></li>
+        <li><a href="#" class="magnetic" data-page="sports">Sports</a></li>
+        <li><a href="#" class="magnetic" data-page="entertainment">Entertainment</a></li>
+      </ul>
+      <div class="nav-actions">
+        <button class="nav-btn magnetic" id="searchBtn"><i class="fas fa-search"></i></button>
+        <button class="nav-btn magnetic" id="themeBtn"><i class="fas fa-moon"></i></button>
+        <button class="subscribe-btn magnetic">Subscribe</button>
+        <button class="menu-toggle">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Breaking News Ticker -->
+  <div class="ticker">
+    <div class="ticker-content">
+      <span class="ticker-item">Breaking: Major tech companies report record earnings in Q4</span>
+      <span class="ticker-item">Live: World leaders gather for historic climate summit</span>
+      <span class="ticker-item">Update: New discoveries in space exploration announced by NASA</span>
+      <span class="ticker-item">Alert: Stock markets reach all-time highs amid economic recovery</span>
+      <span class="ticker-item">Breaking: Major tech companies report record earnings in Q4</span>
+      <span class="ticker-item">Live: World leaders gather for historic climate summit</span>
+      <span class="ticker-item">Update: New discoveries in space exploration announced by NASA</span>
+      <span class="ticker-item">Alert: Stock markets reach all-time highs amid economic recovery</span>
+    </div>
+  </div>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-bg">
+      <div class="hero-bg-gradient"></div>
+      <div class="hero-bg-gradient"></div>
+    </div>
+    <div class="hero-content">
+      <div class="hero-text">
+        <h1>
+          <span>The Future</span><br>
+          <span>of</span> <span class="highlight glitch" data-text="News">News</span><br>
+          <span>Starts Here</span>
+        </h1>
+        <p>Experience journalism reimagined with immersive storytelling, real-time updates, and personalized content
+          that keeps you ahead of the curve.</p>
+        <div class="hero-buttons">
+          <a href="#" class="btn btn-primary magnetic">
+            <span>Explore Stories</span>
+            <i class="fas fa-arrow-right"></i>
+          </a>
+          <a href="#" class="btn btn-outline magnetic">
+            <span>Watch Live</span>
+            <i class="fas fa-play"></i>
+          </a>
+        </div>
+      </div>
+      <div class="hero-featured">
+        <div class="featured-card">
+          <span class="featured-badge">🔴 LIVE</span>
+          <img src="https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=600" alt="Featured News"
+            class="featured-image">
+          <div class="featured-content">
+            <span class="featured-category">Breaking News</span>
+            <h3 class="featured-title">Global Leaders Unite for Historic Climate Agreement</h3>
+            <div class="featured-meta">
+              <span><i class="far fa-clock"></i> 2 hours ago</span>
+              <span><i class="far fa-eye"></i> 15.2K views</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Categories Section -->
+  <section class="categories">
+    <div class="section-header">
+      <h2 class="section-title animate-on-scroll">Latest Stories</h2>
+      <div class="category-tabs">
+        <button class="category-tab active magnetic" data-category="all">All</button>
+        <button class="category-tab magnetic" data-category="tech">Technology</button>
+        <button class="category-tab magnetic" data-category="politics">Politics</button>
+        <button class="category-tab magnetic" data-category="sports">Sports</button>
+        <button class="category-tab magnetic" data-category="entertainment">Entertainment</button>
+      </div>
+    </div>
+    <div class="news-grid" id="newsGrid">
+      <!-- News cards will be dynamically inserted here -->
+    </div>
+  </section>
+
+  <!-- Trending Section -->
+  <section class="trending">
+    <div class="trending-container">
+      <h2 class="section-title animate-on-scroll">Trending Now</h2>
+      <div class="trending-scroll" id="trendingScroll">
+        <!-- Trending cards will be dynamically inserted here -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Featured Story Section -->
+  <section class="featured-story">
+    <div class="story-container animate-on-scroll">
+      <div class="story-image-container">
+        <img src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800" alt="Featured Story"
+          class="story-image">
+      </div>
+      <div class="story-content">
+        <div class="story-label">
+          <i class="fas fa-star"></i>
+          <span>Editor's Pick</span>
+        </div>
+        <h2 class="story-title">The Digital Revolution: How AI is Reshaping Every Industry</h2>
+        <p class="story-excerpt">From healthcare to finance, artificial intelligence is transforming the way we live and
+          work. Our in-depth investigation reveals the opportunities and challenges ahead.</p>
+        <div class="story-meta">
+          <div class="story-meta-item">
+            <i class="far fa-clock"></i>
+            <span>15 min read</span>
+          </div>
+          <div class="story-meta-item">
+            <i class="far fa-calendar"></i>
+            <span>Dec 15, 2024</span>
+          </div>
+          <div class="story-meta-item">
+            <i class="far fa-comment"></i>
+            <span>234 comments</span>
+          </div>
+        </div>
+        <a href="#" class="read-more-btn magnetic">
+          <span>Read Full Story</span>
+          <i class="fas fa-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Newsletter Section -->
+  <section class="newsletter">
+    <div class="newsletter-container animate-on-scroll">
+      <h2 class="newsletter-title">Stay Informed</h2>
+      <p class="newsletter-text">Get the latest news delivered straight to your inbox. No spam, just quality journalism.
+      </p>
+      <form class="newsletter-form" id="newsletterForm">
+        <input type="email" class="newsletter-input" placeholder="Enter your email address" required>
+        <button type="submit" class="newsletter-btn magnetic">Subscribe</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="#" class="footer-logo">NewsHub</a>
+          <p class="footer-desc">Delivering trusted news and insightful analysis since 2024. Our commitment to
+            journalism excellence drives everything we do.</p>
+          <div class="footer-social">
+            <a href="#" class="social-link magnetic"><i class="fab fa-twitter"></i></a>
+            <a href="#" class="social-link magnetic"><i class="fab fa-facebook-f"></i></a>
+            <a href="#" class="social-link magnetic"><i class="fab fa-instagram"></i></a>
+            <a href="#" class="social-link magnetic"><i class="fab fa-youtube"></i></a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4 class="footer-title">Categories</h4>
+          <ul class="footer-links">
+            <li><a href="#">World News</a></li>
+            <li><a href="#">Politics</a></li>
+            <li><a href="#">Technology</a></li>
+            <li><a href="#">Sports</a></li>
+            <li><a href="#">Entertainment</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h4 class="footer-title">Company</h4>
+          <ul class="footer-links">
+            <li><a href="#">About Us</a></li>
+            <li><a href="#">Careers</a></li>
+            <li><a href="#">Contact</a></li>
+            <li><a href="#">Advertise</a></li>
+            <li><a href="#">Press</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h4 class="footer-title">Legal</h4>
+          <ul class="footer-links">
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms of Service</a></li>
+            <li><a href="#">Cookie Policy</a></li>
+            <li><a href="#">Accessibility</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2024 NewsHub. All rights reserved.</p>
+        <p>Made with ❤️ for journalism</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Back to Top Button -->
+  <button class="back-to-top" id="backToTop">
+    <i class="fas fa-arrow-up"></i>
+  </button>
+
+  <!-- Search Overlay -->
+  <div class="search-overlay" id="searchOverlay">
+    <button class="search-close" id="searchClose">&times;</button>
+    <div class="search-container">
+      <div class="search-input-container">
+        <input type="text" class="search-input" placeholder="Search for news..." id="searchInput">
+        <button class="search-submit"><i class="fas fa-search"></i></button>
+      </div>
+      <div class="search-suggestions">
+        <p class="search-suggestions-title">Popular Searches</p>
+        <div class="search-tags">
+          <span class="search-tag">Climate Change</span>
+          <span class="search-tag">Technology</span>
+          <span class="search-tag">Elections</span>
+          <span class="search-tag">Space</span>
+          <span class="search-tag">Cryptocurrency</span>
+          <span class="search-tag">AI</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast">
+    <div class="toast-icon">
+      <i class="fas fa-check"></i>
+    </div>
+    <div class="toast-content">
+      <h4>Success!</h4>
+      <p>Article saved to your bookmarks</p>
+    </div>
+  </div>
+
+  <!-- Article Modal -->
+  <div class="article-modal" id="articleModal">
+    <button class="article-modal-close" id="articleClose">&times;</button>
+    <div class="article-modal-content">
+      <img src="" alt="" class="article-header-image" id="articleImage">
+      <span class="article-category" id="articleCategory">Technology</span>
+      <h1 class="article-title" id="articleTitle">Article Title</h1>
+      <div class="article-meta">
+        <div class="article-meta-item">
+          <i class="far fa-user"></i>
+          <span id="articleAuthor">John Doe</span>
+        </div>
+        <div class="article-meta-item">
+          <i class="far fa-clock"></i>
+          <span id="articleDate">Dec 15, 2024</span>
+        </div>
+        <div class="article-meta-item">
+          <i class="far fa-eye"></i>
+          <span id="articleViews">10.5K views</span>
+        </div>
+      </div>
+      <div class="article-body" id="articleBody">
+        <!-- Article content will be inserted here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Weather Widget -->
+  <div class="weather-widget" id="weatherWidget">
+    <div class="weather-icon">☀️</div>
+    <div class="weather-info">
+      <h4>72°F</h4>
+      <p>New York, Sunny</p>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+
+</html>
