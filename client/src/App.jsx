@@ -11,7 +11,6 @@ import BackToTop from './components/BackToTop'
 import SearchOverlay from './components/SearchOverlay'
 import Toast from './components/Toast'
 import ArticleModal from './components/ArticleModal'
-import WeatherWidget from './components/WeatherWidget'
 import PageTransition from './components/PageTransition'
 import Chatbot from './components/Chatbot'
 import HomePage from './pages/HomePage'
@@ -39,7 +38,6 @@ function ViewArticleWrapper({ onNavClick, setCurrentViewArticle }) {
 function AppContent() {
   const [loaded, setLoaded] = useState(false)
   const [tickerVisible, setTickerVisible] = useState(false)
-  const [weatherVisible, setWeatherVisible] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const [toastVisible, setToastVisible] = useState(false)
@@ -64,7 +62,6 @@ function AppContent() {
       setLoaded(true)
       setTimeout(() => {
         setTickerVisible(true)
-        setWeatherVisible(true)
       }, 500)
     }, 2500)
     return () => clearTimeout(timer)
@@ -165,7 +162,6 @@ function AppContent() {
       <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
       <Toast message={toastMessage} visible={toastVisible} />
       <ArticleModal data={articleModalData} onClose={closeArticle} showToast={showToast} />
-      {!isAuthPage && !isSpecialPage && <WeatherWidget visible={weatherVisible} />}
       {!isAuthPage && <Chatbot articleContext={articleModalData || currentViewArticle} />}
     </>
   )

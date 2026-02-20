@@ -77,4 +77,29 @@ router.get('/articles', auth, requireRole('admin'), async (req, res) => {
     }
 });
 
+router.get('/users/:id', auth, requireRole('admin'), async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id).select('-password');
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        const articles = await News.find({ authorId: req.params.id }).sort({ _id: -1 });
+        const totalLikes = articles.reduce((sum, a) => sum + (a.likes?.length || 0), 0);
+        const totalComments = articles.reduce((sum, a) => sum + (a.comments?.length || 0), 0);
+
+        res.json({
+            user,
+            articles,
+            stats: {
+                totalArticles: articles.length,
+                publishedArticles: articles.filter(a => a.status === 'published').length,
+                pendingArticles: articles.filter(a => a.status === 'pending').length,
+                totalLikes,
+                totalComments
+            }
+        });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
 module.exports = router;

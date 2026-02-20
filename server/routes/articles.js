@@ -3,6 +3,18 @@ const News = require('../models/News');
 const { auth, requireRole } = require('../middleware');
 const router = express.Router();
 
+// Get all published articles (public endpoint for homepage)
+router.get('/', async (req, res) => {
+    try {
+        const articles = await News.find({ status: 'published' })
+            .sort({ publishedAt: -1, _id: -1 })
+            .limit(20);
+        res.json(articles);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
 router.post('/', auth, requireRole('author', 'admin'), async (req, res) => {
     try {
         const { title, excerpt, category, categoryLabel, image, content, status } = req.body;

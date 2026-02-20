@@ -69,6 +69,7 @@ const fallbackTrendingData = [
 export default function HomePage({ showToast, openArticle, onNavClick }) {
   const [newsData, setNewsData] = useState(fallbackNewsData)
   const [trendingData, setTrendingData] = useState(fallbackTrendingData)
+  const [userArticles, setUserArticles] = useState([])
   const [liveLoading, setLiveLoading] = useState(true)
 
   useEffect(() => {
@@ -87,6 +88,18 @@ export default function HomePage({ showToast, openArticle, onNavClick }) {
 
     // Fetch LIVE news from Perplexity on every page load
     setLiveLoading(true)
+
+    // Fetch user-published articles from our database
+    const fetchUserArticles = async () => {
+      try {
+        const res = await axios.get('/api/articles')
+        if (res.data?.length > 0) {
+          setUserArticles(res.data)
+        }
+      } catch (err) {
+        console.log('User articles fallback:', err.message)
+      }
+    }
 
     // Fetch mixed categories for homepage
     const fetchLiveNews = async () => {
@@ -126,6 +139,7 @@ export default function HomePage({ showToast, openArticle, onNavClick }) {
       }
     }
 
+    fetchUserArticles()
     fetchLiveNews()
     fetchTrending()
 
@@ -142,6 +156,50 @@ export default function HomePage({ showToast, openArticle, onNavClick }) {
           <span>Fetching live news from around the world...</span>
           <div className="live-pulse"></div>
         </div>
+      )}
+
+      {userArticles.length > 0 && (
+        <section className="user-articles-section">
+          <div className="section-header">
+            <h2 className="section-title animate-on-scroll">
+              <i className="fas fa-pen-nib" /> From Our Authors
+            </h2>
+            <p className="section-subtitle">Articles published by our community writers</p>
+          </div>
+          <div className="user-articles-grid">
+            {userArticles.map((article, index) => (
+              <article
+                key={article._id}
+                className="user-article-card animate-on-scroll"
+                style={{ animationDelay: `${index * 0.1}s` }}
+                onClick={() => onNavClick(`/view/${article._id}`)}
+              >
+                <div className="user-article-image">
+                  <img
+                    src={article.image || 'https://images.unsplash.com/photo-1504711434969-e33886168d5c?w=800'}
+                    alt={article.title}
+                    onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1504711434969-e33886168d5c?w=800' }}
+                  />
+                  <span className="user-article-category">{article.categoryLabel || article.category}</span>
+                </div>
+                <div className="user-article-content">
+                  <h3>{article.title}</h3>
+                  <p>{article.excerpt}</p>
+                  <div className="user-article-footer">
+                    <div className="user-article-author">
+                      <div className="author-avatar-small">{article.authorAvatar || article.author?.charAt(0)}</div>
+                      <span>{article.author}</span>
+                    </div>
+                    <div className="user-article-stats">
+                      <span><i className="fas fa-heart" /> {article.likes?.length || 0}</span>
+                      <span><i className="fas fa-comment" /> {article.comments?.length || 0}</span>
+                    </div>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
       )}
 
       <NewsGrid newsData={newsData} showToast={showToast} openArticle={openArticle} />

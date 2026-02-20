@@ -66,7 +66,7 @@ export default function SignupPage({ onNavClick }) {
             </button>
           </div>
 
-          <form className="auth-form" onSubmit={handleSubmit}>
+          <form className="auth-form" onSubmit={handleSubmit} autoComplete="off">
             <div className="auth-field">
               <label className="auth-label">Full Name</label>
               <div className="auth-input-wrapper">
@@ -78,6 +78,8 @@ export default function SignupPage({ onNavClick }) {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
+                  autoComplete="off"
+                  name="signup-name"
                 />
               </div>
             </div>
@@ -92,6 +94,8 @@ export default function SignupPage({ onNavClick }) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  autoComplete="off"
+                  name="signup-email"
                 />
               </div>
             </div>
@@ -106,6 +110,8 @@ export default function SignupPage({ onNavClick }) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  autoComplete="new-password"
+                  name="signup-password"
                 />
                 <button
                   type="button"
@@ -127,6 +133,8 @@ export default function SignupPage({ onNavClick }) {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
+                  autoComplete="new-password"
+                  name="signup-confirm-password"
                 />
               </div>
             </div>

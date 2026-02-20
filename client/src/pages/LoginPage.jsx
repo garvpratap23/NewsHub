@@ -37,7 +37,7 @@ export default function LoginPage({ onNavClick }) {
             <p className="auth-subtitle">Sign in to access your personalized news feed</p>
           </div>
           {error && <div className="auth-error"><i className="fas fa-exclamation-circle" /> {error}</div>}
-          <form className="auth-form" onSubmit={handleSubmit}>
+          <form className="auth-form" onSubmit={handleSubmit} autoComplete="off">
             <div className="auth-field">
               <label className="auth-label">Email Address</label>
               <div className="auth-input-wrapper">
@@ -49,6 +49,8 @@ export default function LoginPage({ onNavClick }) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  autoComplete="off"
+                  name="login-email"
                 />
               </div>
             </div>
@@ -63,6 +65,8 @@ export default function LoginPage({ onNavClick }) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  autoComplete="new-password"
+                  name="login-password"
                 />
                 <button
                   type="button"

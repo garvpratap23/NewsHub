@@ -11,6 +11,8 @@ export default function AdminPanel({ onNavClick }) {
   const [loading, setLoading] = useState(true)
   const [reviewNote, setReviewNote] = useState('')
   const [expandedArticle, setExpandedArticle] = useState(null)
+  const [selectedUser, setSelectedUser] = useState(null)
+  const [userProfileLoading, setUserProfileLoading] = useState(false)
 
   useEffect(() => {
     if (!isAdmin) { onNavClick('/'); return }
@@ -78,6 +80,24 @@ export default function AdminPanel({ onNavClick }) {
       method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }
     })
     fetchData()
+  }
+
+  const handleViewUser = async (userId) => {
+    setUserProfileLoading(true)
+    try {
+      const res = await fetch(`/api/admin/users/${userId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      const data = await res.json()
+      setSelectedUser(data)
+    } catch (err) {
+      console.error(err)
+    }
+    setUserProfileLoading(false)
+  }
+
+  const closeUserProfile = () => {
+    setSelectedUser(null)
   }
 
   if (loading) return (
@@ -178,7 +198,16 @@ export default function AdminPanel({ onNavClick }) {
               <tbody>
                 {users.map(u => (
                   <tr key={u._id}>
-                    <td><div className="user-cell"><div className="table-avatar">{u.name?.charAt(0)}</div>{u.name}</div></td>
+                    <td>
+                      <div
+                        className="user-cell clickable-name"
+                        onClick={() => handleViewUser(u._id)}
+                        title="View user profile"
+                      >
+                        <div className="table-avatar">{u.name?.charAt(0)}</div>
+                        <span className="user-name-link">{u.name}</span>
+                      </div>
+                    </td>
                     <td>{u.email}</td>
                     <td>
                       <select
@@ -193,6 +222,9 @@ export default function AdminPanel({ onNavClick }) {
                     </td>
                     <td>{new Date(u.createdAt).toLocaleDateString()}</td>
                     <td>
+                      <button className="action-btn view" onClick={() => handleViewUser(u._id)} title="View Profile">
+                        <i className="fas fa-eye" />
+                      </button>
                       {u.role !== 'admin' && (
                         <button className="action-btn delete" onClick={() => handleDeleteUser(u._id)}>
                           <i className="fas fa-trash" />
@@ -208,40 +240,48 @@ export default function AdminPanel({ onNavClick }) {
 
         {activeTab === 'articles' && (
           <div className="admin-table-wrapper">
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>Title</th>
-                  <th>Author</th>
-                  <th>Category</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {articles.map(a => (
-                  <tr key={a._id}>
-                    <td className="title-cell">{a.title}</td>
-                    <td>{a.author}</td>
-                    <td><span className="category-badge">{a.category}</span></td>
-                    <td><span className={`status-badge ${a.status || 'published'}`}>{a.status || 'published'}</span></td>
-                    <td className="actions-cell">
-                      <button className="action-btn publish" onClick={() => onNavClick(`/view/${a._id}`)} title="View">
-                        <i className="fas fa-eye" />
-                      </button>
-                      {a.status === 'approved' && (
-                        <button className="action-btn publish" onClick={() => handlePublish(a._id)} title="Publish">
-                          <i className="fas fa-paper-plane" />
-                        </button>
-                      )}
-                      <button className="action-btn delete" onClick={() => handleDeleteArticle(a._id)} title="Delete">
-                        <i className="fas fa-trash" />
-                      </button>
-                    </td>
+            {articles.length === 0 ? (
+              <div className="empty-state">
+                <i className="fas fa-newspaper" />
+                <h3>No Articles Yet</h3>
+                <p>Articles created by users will appear here once published</p>
+              </div>
+            ) : (
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Title</th>
+                    <th>Author</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {articles.map(a => (
+                    <tr key={a._id}>
+                      <td className="title-cell">{a.title}</td>
+                      <td>{a.author}</td>
+                      <td><span className="category-badge">{a.category}</span></td>
+                      <td><span className={`status-badge ${a.status || 'published'}`}>{a.status || 'published'}</span></td>
+                      <td className="actions-cell">
+                        <button className="action-btn publish" onClick={() => onNavClick(`/view/${a._id}`)} title="View">
+                          <i className="fas fa-eye" />
+                        </button>
+                        {a.status === 'approved' && (
+                          <button className="action-btn publish" onClick={() => handlePublish(a._id)} title="Publish">
+                            <i className="fas fa-paper-plane" />
+                          </button>
+                        )}
+                        <button className="action-btn delete" onClick={() => handleDeleteArticle(a._id)} title="Delete">
+                          <i className="fas fa-trash" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         )}
 
@@ -308,6 +348,88 @@ export default function AdminPanel({ onNavClick }) {
           </div>
         )}
       </div>
+
+      {/* User Profile Modal */}
+      {selectedUser && (
+        <div className="user-profile-modal-overlay" onClick={closeUserProfile}>
+          <div className="user-profile-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close-btn" onClick={closeUserProfile}>
+              <i className="fas fa-times" />
+            </button>
+
+            {userProfileLoading ? (
+              <div className="admin-loading"><div className="admin-spinner" /></div>
+            ) : (
+              <>
+                <div className="user-profile-header">
+                  <div className="user-profile-avatar">
+                    {selectedUser.user?.name?.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="user-profile-info">
+                    <h2>{selectedUser.user?.name}</h2>
+                    <p className="user-profile-email">{selectedUser.user?.email}</p>
+                    <span className={`role-badge ${selectedUser.user?.role}`}>
+                      {selectedUser.user?.role?.charAt(0).toUpperCase() + selectedUser.user?.role?.slice(1)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="user-profile-stats">
+                  <div className="user-stat">
+                    <span className="user-stat-value">{selectedUser.stats?.totalArticles || 0}</span>
+                    <span className="user-stat-label">Articles</span>
+                  </div>
+                  <div className="user-stat">
+                    <span className="user-stat-value">{selectedUser.stats?.publishedArticles || 0}</span>
+                    <span className="user-stat-label">Published</span>
+                  </div>
+                  <div className="user-stat">
+                    <span className="user-stat-value">{selectedUser.stats?.totalLikes || 0}</span>
+                    <span className="user-stat-label">Likes</span>
+                  </div>
+                  <div className="user-stat">
+                    <span className="user-stat-value">{selectedUser.stats?.totalComments || 0}</span>
+                    <span className="user-stat-label">Comments</span>
+                  </div>
+                </div>
+
+                <div className="user-profile-meta">
+                  <p><i className="fas fa-calendar" /> Joined: {new Date(selectedUser.user?.createdAt).toLocaleDateString()}</p>
+                </div>
+
+                <div className="user-profile-articles">
+                  <h3><i className="fas fa-newspaper" /> Articles ({selectedUser.articles?.length || 0})</h3>
+                  {selectedUser.articles?.length === 0 ? (
+                    <p className="no-articles">No articles published yet</p>
+                  ) : (
+                    <div className="user-articles-list">
+                      {selectedUser.articles?.map(article => (
+                        <div key={article._id} className="user-article-item">
+                          <div className="user-article-info">
+                            <h4>{article.title}</h4>
+                            <div className="user-article-meta">
+                              <span className={`status-badge ${article.status}`}>{article.status}</span>
+                              <span><i className="fas fa-heart" /> {article.likes?.length || 0}</span>
+                              <span><i className="fas fa-comments" /> {article.comments?.length || 0}</span>
+                            </div>
+                          </div>
+                          <button
+                            className="action-btn view"
+                            onClick={() => { closeUserProfile(); onNavClick(`/view/${article._id}`); }}
+                            title="View Article"
+                          >
+                            <i className="fas fa-eye" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </section>
   )
 }

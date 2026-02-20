@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import ProfileDropdown from './ProfileDropdown'
+import NavWeather from './NavWeather'
 
 export default function Header({ onSearchClick, onNavClick, mobileMenuOpen, setMobileMenuOpen, darkMode, setDarkMode }) {
   const [scrolled, setScrolled] = useState(false)
@@ -76,6 +77,7 @@ export default function Header({ onSearchClick, onNavClick, mobileMenuOpen, setM
           ))}
         </ul>
         <div className="nav-actions">
+          <NavWeather />
           <button
             className="nav-btn magnetic"
             onClick={onSearchClick}
