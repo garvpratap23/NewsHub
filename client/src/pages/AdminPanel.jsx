@@ -12,7 +12,6 @@ export default function AdminPanel({ onNavClick }) {
   const [reviewNote, setReviewNote] = useState('')
   const [expandedArticle, setExpandedArticle] = useState(null)
   const [selectedUser, setSelectedUser] = useState(null)
-  const [userProfileLoading, setUserProfileLoading] = useState(false)
 
   useEffect(() => {
     if (!isAdmin) { onNavClick('/'); return }
@@ -83,17 +82,27 @@ export default function AdminPanel({ onNavClick }) {
   }
 
   const handleViewUser = async (userId) => {
-    setUserProfileLoading(true)
+    console.log('handleViewUser called with userId:', userId)
+    setSelectedUser({ loading: true })
     try {
       const res = await fetch(`/api/admin/users/${userId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
+      console.log('Response status:', res.status)
       const data = await res.json()
-      setSelectedUser(data)
+      console.log('Response data:', data)
+      if (res.ok) {
+        setSelectedUser(data)
+      } else {
+        console.error('Error fetching user:', data.message)
+        alert('Error: ' + (data.message || 'Failed to load user'))
+        setSelectedUser(null)
+      }
     } catch (err) {
-      console.error(err)
+      console.error('Catch error:', err)
+      alert('Network error: ' + err.message)
+      setSelectedUser(null)
     }
-    setUserProfileLoading(false)
   }
 
   const closeUserProfile = () => {
@@ -357,7 +366,7 @@ export default function AdminPanel({ onNavClick }) {
               <i className="fas fa-times" />
             </button>
 
-            {userProfileLoading ? (
+            {selectedUser.loading ? (
               <div className="admin-loading"><div className="admin-spinner" /></div>
             ) : (
               <>

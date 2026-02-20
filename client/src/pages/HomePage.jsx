@@ -148,7 +148,7 @@ export default function HomePage({ showToast, openArticle, onNavClick }) {
 
   return (
     <>
-      <Hero onNavClick={onNavClick} />
+      <Hero onNavClick={onNavClick} openArticle={openArticle} />
 
       {liveLoading && (
         <div className="live-loading-banner">
@@ -170,7 +170,7 @@ export default function HomePage({ showToast, openArticle, onNavClick }) {
             {userArticles.map((article, index) => (
               <article
                 key={article._id}
-                className="user-article-card animate-on-scroll"
+                className="user-article-card visible"
                 style={{ animationDelay: `${index * 0.1}s` }}
                 onClick={() => onNavClick(`/view/${article._id}`)}
               >
@@ -203,8 +203,8 @@ export default function HomePage({ showToast, openArticle, onNavClick }) {
       )}
 
       <NewsGrid newsData={newsData} showToast={showToast} openArticle={openArticle} />
-      <Trending trendingData={trendingData} />
-      <FeaturedStory />
+      <Trending trendingData={trendingData} openArticle={openArticle} />
+      <FeaturedStory openArticle={openArticle} />
       <Newsletter showToast={showToast} />
     </>
   )

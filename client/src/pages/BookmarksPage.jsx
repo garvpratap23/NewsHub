@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 
-export default function BookmarksPage({ openArticle }) {
+export default function BookmarksPage({ openArticle, onNavClick }) {
   const { token, isAuthenticated } = useAuth()
   const [bookmarks, setBookmarks] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!isAuthenticated) return
+    if (!isAuthenticated) {
+      setLoading(false)
+      return
+    }
     fetchBookmarks()
   }, [isAuthenticated])
 
@@ -17,9 +20,15 @@ export default function BookmarksPage({ openArticle }) {
       const res = await fetch('/api/bookmarks', {
         headers: { 'Authorization': `Bearer ${token}` }
       })
-      setBookmarks(await res.json())
+      if (res.ok) {
+        const data = await res.json()
+        setBookmarks(Array.isArray(data) ? data : [])
+      } else {
+        setBookmarks([])
+      }
     } catch (err) {
       console.error(err)
+      setBookmarks([])
     }
     setLoading(false)
   }
@@ -31,6 +40,15 @@ export default function BookmarksPage({ openArticle }) {
       body: JSON.stringify({ articleId })
     })
     fetchBookmarks()
+  }
+
+  const handleArticleClick = (article) => {
+    // For database articles, navigate to view page
+    if (article._id && onNavClick) {
+      onNavClick(`/view/${article._id}`)
+    } else if (openArticle) {
+      openArticle(article)
+    }
   }
 
   return (
@@ -49,6 +67,15 @@ export default function BookmarksPage({ openArticle }) {
 
         {loading ? (
           <div className="admin-loading"><div className="admin-spinner" /></div>
+        ) : !isAuthenticated ? (
+          <div className="empty-state">
+            <i className="fas fa-sign-in-alt" />
+            <h3>Please log in</h3>
+            <p>You need to be logged in to view your bookmarks</p>
+            <button className="btn btn-primary" onClick={() => onNavClick && onNavClick('/login')}>
+              Log In
+            </button>
+          </div>
         ) : bookmarks.length === 0 ? (
           <div className="empty-state">
             <i className="fas fa-bookmark" />
@@ -58,7 +85,7 @@ export default function BookmarksPage({ openArticle }) {
         ) : (
           <div className="bookmarks-grid">
             {bookmarks.map(article => (
-              <div key={article._id} className="bookmark-card" onClick={() => openArticle && openArticle(article)}>
+              <div key={article._id} className="bookmark-card" onClick={() => handleArticleClick(article)}>
                 <div className="bookmark-card-image">
                   <img src={article.image || 'https://images.unsplash.com/photo-1504711434969-e33886168d5c?w=400'} alt={article.title} />
                 </div>

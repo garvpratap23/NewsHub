@@ -142,7 +142,7 @@ function AppContent() {
         <Route path="/admin" element={<AdminPanel onNavClick={handleNavClick} />} />
         <Route path="/write" element={<WriteArticle onNavClick={handleNavClick} showToast={showToast} />} />
         <Route path="/my-articles" element={<MyArticles onNavClick={handleNavClick} showToast={showToast} />} />
-        <Route path="/bookmarks" element={<BookmarksPage openArticle={openArticle} />} />
+        <Route path="/bookmarks" element={<BookmarksPage openArticle={openArticle} onNavClick={handleNavClick} />} />
         <Route path="/dashboard" element={<AuthorDashboard onNavClick={handleNavClick} />} />
         <Route path="/edit/:id" element={<EditArticleWrapper onNavClick={handleNavClick} showToast={showToast} />} />
         <Route path="/view/:id" element={<ViewArticleWrapper onNavClick={handleNavClick} setCurrentViewArticle={setCurrentViewArticle} />} />
@@ -159,7 +159,7 @@ function AppContent() {
 
       {!isAuthPage && !isSpecialPage && <Footer onNavClick={handleNavClick} />}
       <BackToTop />
-      <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
+      <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} onNavClick={handleNavClick} />
       <Toast message={toastMessage} visible={toastVisible} />
       <ArticleModal data={articleModalData} onClose={closeArticle} showToast={showToast} />
       {!isAuthPage && <Chatbot articleContext={articleModalData || currentViewArticle} />}

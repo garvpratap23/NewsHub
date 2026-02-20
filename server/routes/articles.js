@@ -3,6 +3,45 @@ const News = require('../models/News');
 const { auth, requireRole } = require('../middleware');
 const router = express.Router();
 
+// Search articles by keywords (public endpoint)
+router.get('/search', async (req, res) => {
+    try {
+        const { q } = req.query;
+        if (!q || q.trim().length < 2) {
+            return res.json([]);
+        }
+
+        // Split query into keywords and create regex for each
+        const keywords = q.trim().split(/\s+/).filter(k => k.length >= 2);
+        if (keywords.length === 0) {
+            return res.json([]);
+        }
+
+        // Create OR conditions for each keyword across multiple fields
+        const orConditions = keywords.map(keyword => ({
+            $or: [
+                { title: { $regex: keyword, $options: 'i' } },
+                { excerpt: { $regex: keyword, $options: 'i' } },
+                { content: { $regex: keyword, $options: 'i' } },
+                { category: { $regex: keyword, $options: 'i' } },
+                { categoryLabel: { $regex: keyword, $options: 'i' } },
+                { author: { $regex: keyword, $options: 'i' } }
+            ]
+        }));
+
+        const articles = await News.find({
+            status: 'published',
+            $or: orConditions.flatMap(c => c.$or)
+        })
+            .sort({ publishedAt: -1, _id: -1 })
+            .limit(10);
+
+        res.json(articles);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
 // Get all published articles (public endpoint for homepage)
 router.get('/', async (req, res) => {
     try {
