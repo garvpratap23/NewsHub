@@ -24,6 +24,8 @@ import BookmarksPage from './pages/BookmarksPage'
 import AuthorDashboard from './pages/AuthorDashboard'
 import EditArticle from './pages/EditArticle'
 import ViewArticle from './pages/ViewArticle'
+import EditProfile from './pages/EditProfile'
+import ProfilePage from './pages/ProfilePage'
 
 function EditArticleWrapper({ onNavClick, showToast }) {
   const { id } = useParams()
@@ -107,7 +109,7 @@ function AppContent() {
   }, [closeArticle])
 
   const isAuthPage = location.pathname === '/login' || location.pathname === '/signup'
-  const isSpecialPage = ['/admin', '/write', '/my-articles', '/bookmarks', '/dashboard'].includes(location.pathname) ||
+  const isSpecialPage = ['/admin', '/write', '/my-articles', '/bookmarks', '/dashboard', '/profile', '/edit-profile'].includes(location.pathname) ||
     location.pathname.startsWith('/edit/') || location.pathname.startsWith('/view/')
 
   return (
@@ -146,6 +148,8 @@ function AppContent() {
         <Route path="/dashboard" element={<AuthorDashboard onNavClick={handleNavClick} />} />
         <Route path="/edit/:id" element={<EditArticleWrapper onNavClick={handleNavClick} showToast={showToast} />} />
         <Route path="/view/:id" element={<ViewArticleWrapper onNavClick={handleNavClick} setCurrentViewArticle={setCurrentViewArticle} />} />
+        <Route path="/profile" element={<ProfilePage onNavClick={handleNavClick} />} />
+        <Route path="/edit-profile" element={<EditProfile onNavClick={handleNavClick} showToast={showToast} />} />
         <Route
           path="/:category"
           element={

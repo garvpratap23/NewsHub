@@ -48,7 +48,12 @@ export default function ProfileDropdown({ onNavClick, onClose }) {
 
       <div className="profile-dropdown-divider" />
 
+
       <div className="profile-dropdown-menu">
+        <button className="profile-menu-item" onClick={() => handleNav('/profile')}>
+          <i className="fas fa-user" />
+          <span>Profile</span>
+        </button>
         <button className="profile-menu-item" onClick={() => handleNav('/bookmarks')}>
           <i className="fas fa-bookmark" />
           <span>Bookmarks</span>
