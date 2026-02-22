@@ -63,7 +63,7 @@ router.post('/', auth, requireRole('author', 'admin'), async (req, res) => {
             image: image || 'https://images.unsplash.com/photo-1504711434969-e33886168d5c?w=800',
             content,
             author: req.user.name,
-            authorAvatar: req.user.name.charAt(0).toUpperCase(),
+            authorAvatar: req.user.avatar || req.user.name.charAt(0).toUpperCase(),
             authorId: req.user._id,
             date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
             readTime: Math.max(1, Math.ceil((content || '').split(' ').length / 200)) + ' min read',

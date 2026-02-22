@@ -187,7 +187,13 @@ export default function HomePage({ showToast, openArticle, onNavClick }) {
                   <p>{article.excerpt}</p>
                   <div className="user-article-footer">
                     <div className="user-article-author">
-                      <div className="author-avatar-small">{article.authorAvatar || article.author?.charAt(0)}</div>
+                      <div className="author-avatar-small">
+                        {article.authorAvatar && article.authorAvatar.length > 1 ? (
+                          <img src={article.authorAvatar} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                        ) : (
+                          article.authorAvatar || article.author?.charAt(0)
+                        )}
+                      </div>
                       <span>{article.author}</span>
                     </div>
                     <div className="user-article-stats">
