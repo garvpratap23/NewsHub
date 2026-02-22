@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const replySchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     userName: String,
+    userAvatar: String,
     text: String,
     likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     createdAt: { type: Date, default: Date.now }
@@ -11,6 +12,7 @@ const replySchema = new mongoose.Schema({
 const commentSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     userName: String,
+    userAvatar: String,
     text: String,
     likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     replies: [replySchema],

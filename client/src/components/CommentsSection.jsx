@@ -120,7 +120,13 @@ export default function CommentsSection({ articleId, comments, setComments, show
           comments.map((c) => (
             <div key={c._id || Math.random()} className="comment-thread">
               <div className="comment-item">
-                <div className="comment-avatar">{c.userName?.charAt(0) || 'U'}</div>
+                <div className="comment-avatar">
+                  {c.userAvatar ? (
+                    <img src={c.userAvatar} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                  ) : (
+                    c.userName?.charAt(0) || 'U'
+                  )}
+                </div>
                 <div className="comment-body">
                   <span className="comment-author">{c.userName || 'User'}</span>
                   <p className="comment-text">{c.text}</p>
@@ -146,10 +152,16 @@ export default function CommentsSection({ articleId, comments, setComments, show
               </div>
 
               {c.replies && c.replies.length > 0 && (
-                <div className="replies-list">
+                <div className="replies-list" style={{ marginLeft: '48px', borderLeft: '2px solid rgba(255,255,255,0.05)', paddingLeft: '12px' }}>
                   {c.replies.map((r, ri) => (
                     <div key={r._id || ri} className="comment-item reply-item">
-                      <div className="comment-avatar reply-avatar">{r.userName?.charAt(0) || 'U'}</div>
+                      <div className="comment-avatar reply-avatar">
+                        {r.userAvatar ? (
+                          <img src={r.userAvatar} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                        ) : (
+                          r.userName?.charAt(0) || 'U'
+                        )}
+                      </div>
                       <div className="comment-body">
                         <span className="comment-author">{r.userName || 'User'}</span>
                         <p className="comment-text">{r.text}</p>

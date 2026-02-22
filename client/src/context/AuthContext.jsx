@@ -64,6 +64,11 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('user')
   }, [])
 
+  const updateUser = useCallback((userData) => {
+    setUser(userData)
+    localStorage.setItem('user', JSON.stringify(userData))
+  }, [])
+
   const isAuthenticated = !!user
   const isAdmin = user?.role === 'admin'
   const isAuthor = user?.role === 'author'
@@ -71,7 +76,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider value={{
-      user, token, loading, login, register, logout,
+      user, token, loading, login, register, logout, setUser, updateUser,
       isAuthenticated, isAdmin, isAuthor, isReader
     }}>
       {children}

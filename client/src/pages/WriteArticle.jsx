@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useAuth } from '../context/AuthContext'
 
 export default function WriteArticle({ onNavClick, showToast }) {
@@ -10,6 +10,8 @@ export default function WriteArticle({ onNavClick, showToast }) {
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [imageUploading, setImageUploading] = useState(false)
+  const fileInputRef = useRef(null)
 
   // AI states
   const [aiTitles, setAiTitles] = useState([])
@@ -28,6 +30,31 @@ export default function WriteArticle({ onNavClick, showToast }) {
     { id: 'academic', label: 'Academic', icon: 'fas fa-graduation-cap', desc: 'Scholarly & detailed' },
     { id: 'dramatic', label: 'Dramatic', icon: 'fas fa-fire', desc: 'Intense & vivid' }
   ]
+
+  const handleImageUpload = async (file) => {
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image must be under 5MB')
+      return
+    }
+    setImageUploading(true)
+    setError('')
+    try {
+      const formData = new FormData()
+      formData.append('image', file)
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message)
+      setImage(data.url)
+      if (showToast) showToast('Image uploaded!')
+    } catch (err) {
+      setError('Upload failed: ' + err.message)
+    }
+    setImageUploading(false)
+  }
 
   const handleSubmit = async (e, status = 'pending') => {
     e.preventDefault()
@@ -213,13 +240,56 @@ export default function WriteArticle({ onNavClick, showToast }) {
               </select>
             </div>
             <div className="write-field">
-              <label className="write-label">Image URL</label>
+              <label className="write-label">Article Image</label>
+              {image ? (
+                <div className="image-preview-box">
+                  <img src={image} alt="Preview" onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1504711434969-e33886168d5c?w=400' }} />
+                  <button type="button" className="image-remove-btn" onClick={() => setImage('')}>
+                    <i className="fas fa-times" />
+                  </button>
+                </div>
+              ) : (
+                <div
+                  className="image-upload-zone"
+                  onClick={() => fileInputRef.current?.click()}
+                  onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('dragover') }}
+                  onDragLeave={(e) => { e.currentTarget.classList.remove('dragover') }}
+                  onDrop={async (e) => {
+                    e.preventDefault()
+                    e.currentTarget.classList.remove('dragover')
+                    const file = e.dataTransfer.files[0]
+                    if (file) await handleImageUpload(file)
+                  }}
+                >
+                  {imageUploading ? (
+                    <div className="upload-spinner"><i className="fas fa-spinner fa-spin" /> Uploading...</div>
+                  ) : (
+                    <>
+                      <i className="fas fa-cloud-upload-alt" />
+                      <span>Click or drag image here</span>
+                      <small>JPEG, PNG, GIF, WebP • Max 5MB</small>
+                    </>
+                  )}
+                </div>
+              )}
               <input
-                type="url"
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={async (e) => {
+                  const file = e.target.files[0]
+                  if (file) await handleImageUpload(file)
+                  e.target.value = ''
+                }}
+              />
+              <input
+                type="text"
                 className="write-input"
-                placeholder="https://example.com/image.jpg"
+                placeholder="Or paste an image URL"
                 value={image}
                 onChange={(e) => setImage(e.target.value)}
+                style={{ marginTop: 8 }}
               />
             </div>
           </div>

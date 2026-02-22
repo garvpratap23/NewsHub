@@ -1,12 +1,40 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useAuth } from '../context/AuthContext'
 
 export default function EditProfile({ onNavClick, showToast }) {
-  const { user, token, setUser } = useAuth()
+  const { user, token, setUser, updateUser } = useAuth()
   const [name, setName] = useState(user?.name || '')
+  const [avatar, setAvatar] = useState(user?.avatar || '')
   const [loading, setLoading] = useState(false)
+  const [avatarUploading, setAvatarUploading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const fileInputRef = useRef(null)
+
+  const handleAvatarUpload = async (file) => {
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image must be under 5MB')
+      return
+    }
+    setAvatarUploading(true)
+    setError('')
+    try {
+      const formData = new FormData()
+      formData.append('image', file)
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message)
+      setAvatar(data.url)
+      if (showToast) showToast('Photo uploaded!')
+    } catch (err) {
+      setError('Upload failed: ' + err.message)
+    }
+    setAvatarUploading(false)
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -20,11 +48,11 @@ export default function EditProfile({ onNavClick, showToast }) {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ name })
+        body: JSON.stringify({ name, avatar })
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message)
-      setUser(data)
+      updateUser(data)
       setSuccess(true)
       if (showToast) showToast('Profile updated!')
     } catch (err) {
@@ -33,26 +61,81 @@ export default function EditProfile({ onNavClick, showToast }) {
     setLoading(false)
   }
 
+  const initials = (user?.name || 'U').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+
   return (
-    <section className="edit-profile-page" style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div className="edit-profile-container" style={{ background: 'rgba(20,20,20,0.95)', padding: 32, borderRadius: 16, boxShadow: '0 2px 16px #0008', minWidth: 320, maxWidth: 400, width: '100%' }}>
-        <h1 className="edit-profile-title" style={{ fontSize: 32, fontWeight: 800, marginBottom: 24, display: 'flex', alignItems: 'center', gap: 12 }}><i className="fas fa-user-edit" /> Edit Profile</h1>
+    <section className="edit-profile-page">
+      <div className="edit-profile-container">
+        <h1 className="edit-profile-title">
+          <i className="fas fa-user-edit" /> Edit Profile
+        </h1>
+
+        {/* Avatar upload */}
+        <div className="avatar-upload-section">
+          <div className="avatar-upload-preview" onClick={() => fileInputRef.current?.click()}>
+            {avatar ? (
+              <img src={avatar} alt="Avatar" className="avatar-upload-img" />
+            ) : (
+              <div className="avatar-upload-initials">{initials}</div>
+            )}
+            <div className="avatar-upload-overlay">
+              {avatarUploading ? (
+                <i className="fas fa-spinner fa-spin" />
+              ) : (
+                <i className="fas fa-camera" />
+              )}
+            </div>
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={async (e) => {
+              const file = e.target.files[0]
+              if (file) await handleAvatarUpload(file)
+              e.target.value = ''
+            }}
+          />
+          <span className="avatar-upload-hint">Click to change photo</span>
+          {avatar && (
+            <button type="button" className="avatar-remove-btn" onClick={() => setAvatar('')}>
+              <i className="fas fa-trash-alt" /> Remove Photo
+            </button>
+          )}
+        </div>
+
         <form className="edit-profile-form" onSubmit={handleSubmit}>
-          <div className="edit-profile-field" style={{ marginBottom: 20 }}>
-            <label style={{ display: 'block', fontWeight: 600, marginBottom: 8 }}>Name</label>
+          <div className="edit-profile-field">
+            <label className="edit-profile-label">Name</label>
             <input
               type="text"
+              className="edit-profile-input"
               value={name}
               onChange={e => setName(e.target.value)}
               required
-              style={{ width: '100%', padding: '10px 12px', borderRadius: 6, border: '1px solid #333', background: '#181818', color: '#fff', fontSize: 16 }}
             />
           </div>
-          {error && <div className="edit-profile-error" style={{ color: '#ff3838', marginBottom: 12 }}>{error}</div>}
-          {success && <div className="edit-profile-success" style={{ color: '#27ae60', marginBottom: 12 }}>Profile updated!</div>}
-          <div className="edit-profile-actions" style={{ display: 'flex', gap: 12, marginTop: 8 }}>
-            <button type="button" onClick={() => onNavClick && onNavClick('/')} style={{ flex: 1, padding: '10px 0', borderRadius: 6, border: 'none', background: '#222', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
-            <button type="submit" disabled={loading} style={{ flex: 1, padding: '10px 0', borderRadius: 6, border: 'none', background: '#ff6600', color: '#fff', fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}>{loading ? 'Saving...' : 'Save Changes'}</button>
+
+          <div className="edit-profile-field">
+            <label className="edit-profile-label">Email</label>
+            <input
+              type="email"
+              className="edit-profile-input"
+              value={user?.email || ''}
+              disabled
+              style={{ opacity: 0.5, cursor: 'not-allowed' }}
+            />
+          </div>
+
+          {error && <div className="edit-profile-error"><i className="fas fa-exclamation-circle" /> {error}</div>}
+          {success && <div className="edit-profile-success"><i className="fas fa-check-circle" /> Profile updated!</div>}
+
+          <div className="edit-profile-actions">
+            <button type="button" className="edit-profile-btn cancel" onClick={() => onNavClick && onNavClick('/')}>Cancel</button>
+            <button type="submit" className="edit-profile-btn save" disabled={loading}>
+              {loading ? 'Saving...' : <><i className="fas fa-save" /> Save Changes</>}
+            </button>
           </div>
         </form>
       </div>

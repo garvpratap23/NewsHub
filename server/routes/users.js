@@ -14,10 +14,11 @@ router.get('/profile', auth, async (req, res) => {
 
 router.put('/profile', auth, async (req, res) => {
     try {
-        const { name, preferences } = req.body;
+        const { name, preferences, avatar } = req.body;
         const updates = {};
         if (name) updates.name = name;
         if (preferences) updates.preferences = preferences;
+        if (avatar !== undefined) updates.avatar = avatar;
 
         const user = await User.findByIdAndUpdate(req.user._id, updates, { new: true }).select('-password');
         res.json(user);

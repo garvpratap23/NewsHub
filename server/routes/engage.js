@@ -35,6 +35,7 @@ router.post('/:id/comment', auth, async (req, res) => {
         article.comments.push({
             userId: req.user._id,
             userName: req.user.name,
+            userAvatar: req.user.avatar,
             text: text.trim()
         });
 
@@ -59,6 +60,7 @@ router.post('/:id/comment/:commentId/reply', auth, async (req, res) => {
         comment.replies.push({
             userId: req.user._id,
             userName: req.user.name,
+            userAvatar: req.user.avatar,
             text: text.trim()
         });
 

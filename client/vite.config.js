@@ -11,6 +11,11 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
         timeout: 60000
+      },
+      '/uploads': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        secure: false
       }
     }
   }

@@ -107,7 +107,11 @@ export default function Header({ onSearchClick, onNavClick, mobileMenuOpen, setM
                 title="Profile"
               >
                 <div className="nav-avatar">
-                  {user?.name?.charAt(0).toUpperCase()}
+                  {user?.avatar ? (
+                    <img src={user.avatar} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                  ) : (
+                    user?.name?.charAt(0).toUpperCase()
+                  )}
                 </div>
               </button>
               {dropdownOpen && (

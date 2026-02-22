@@ -36,7 +36,11 @@ export default function ProfileDropdown({ onNavClick, onClose }) {
     <div className="profile-dropdown" ref={dropdownRef}>
       <div className="profile-dropdown-header">
         <div className="profile-avatar">
-          {user?.name?.charAt(0).toUpperCase()}
+          {user?.avatar ? (
+            <img src={user.avatar} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+          ) : (
+            user?.name?.charAt(0).toUpperCase()
+          )}
         </div>
         <div className="profile-info">
           <span className="profile-name">{user?.name}</span>
