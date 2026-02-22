@@ -12,7 +12,7 @@ export default function CommentsSection({ articleId, comments, setComments, show
     if (!commentText.trim()) return
 
     if (!articleId) {
-      setComments(prev => [...prev, { _id: Date.now(), userName: user?.name || 'You', text: commentText, replies: [], createdAt: new Date() }])
+      setComments(prev => [...prev, { _id: Date.now(), userName: user?.name || 'You', text: commentText, replies: [], likes: [], createdAt: new Date() }])
       setCommentText('')
       if (showToast) showToast('Comment added!')
       return
@@ -38,7 +38,7 @@ export default function CommentsSection({ articleId, comments, setComments, show
     if (!articleId) {
       setComments(prev => prev.map(c =>
         (c._id === commentId || c._id?.toString() === commentId)
-          ? { ...c, replies: [...(c.replies || []), { userName: user?.name || 'You', text: replyText, createdAt: new Date() }] }
+          ? { ...c, replies: [...(c.replies || []), { userName: user?.name || 'You', text: replyText, likes: [], createdAt: new Date() }] }
           : c
       ))
       setReplyText('')
@@ -59,6 +59,39 @@ export default function CommentsSection({ articleId, comments, setComments, show
       setReplyingTo(null)
       if (showToast) showToast('Reply added!')
     } catch (err) { }
+  }
+
+  const handleCommentLike = async (commentId) => {
+    if (!token) { if (showToast) showToast('Login to like'); return }
+    if (!articleId) return
+
+    try {
+      const res = await fetch(`/api/engage/${articleId}/comment/${commentId}/like`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      const d = await res.json()
+      setComments(d.comments || [])
+    } catch (err) { }
+  }
+
+  const handleReplyLike = async (commentId, replyId) => {
+    if (!token) { if (showToast) showToast('Login to like'); return }
+    if (!articleId) return
+
+    try {
+      const res = await fetch(`/api/engage/${articleId}/comment/${commentId}/reply/${replyId}/like`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      const d = await res.json()
+      setComments(d.comments || [])
+    } catch (err) { }
+  }
+
+  const isLikedBy = (likesArr) => {
+    if (!user || !likesArr) return false
+    return likesArr.some(id => id === user._id || id?.toString() === user._id)
   }
 
   return (
@@ -96,6 +129,13 @@ export default function CommentsSection({ articleId, comments, setComments, show
                       {c.createdAt ? new Date(c.createdAt).toLocaleDateString() : 'Just now'}
                     </span>
                     <button
+                      className={`comment-like-btn ${isLikedBy(c.likes) ? 'liked' : ''}`}
+                      onClick={() => handleCommentLike(c._id)}
+                    >
+                      <i className={isLikedBy(c.likes) ? 'fas fa-heart' : 'far fa-heart'} />
+                      {c.likes?.length > 0 && <span>{c.likes.length}</span>}
+                    </button>
+                    <button
                       className="comment-reply-btn"
                       onClick={() => { setReplyingTo(replyingTo === c._id ? null : c._id); setReplyText('') }}
                     >
@@ -113,9 +153,18 @@ export default function CommentsSection({ articleId, comments, setComments, show
                       <div className="comment-body">
                         <span className="comment-author">{r.userName || 'User'}</span>
                         <p className="comment-text">{r.text}</p>
-                        <span className="comment-time">
-                          {r.createdAt ? new Date(r.createdAt).toLocaleDateString() : 'Just now'}
-                        </span>
+                        <div className="comment-footer">
+                          <span className="comment-time">
+                            {r.createdAt ? new Date(r.createdAt).toLocaleDateString() : 'Just now'}
+                          </span>
+                          <button
+                            className={`comment-like-btn ${isLikedBy(r.likes) ? 'liked' : ''}`}
+                            onClick={() => handleReplyLike(c._id, r._id)}
+                          >
+                            <i className={isLikedBy(r.likes) ? 'fas fa-heart' : 'far fa-heart'} />
+                            {r.likes?.length > 0 && <span>{r.likes.length}</span>}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}

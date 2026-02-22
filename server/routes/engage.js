@@ -69,6 +69,55 @@ router.post('/:id/comment/:commentId/reply', auth, async (req, res) => {
     }
 });
 
+router.post('/:id/comment/:commentId/like', auth, async (req, res) => {
+    try {
+        const article = await News.findById(req.params.id);
+        if (!article) return res.status(404).json({ message: 'Article not found' });
+
+        const comment = article.comments.id(req.params.commentId);
+        if (!comment) return res.status(404).json({ message: 'Comment not found' });
+
+        const userId = req.user._id;
+        const index = comment.likes.indexOf(userId);
+        if (index === -1) {
+            comment.likes.push(userId);
+        } else {
+            comment.likes.splice(index, 1);
+        }
+
+        await article.save();
+        res.json({ comments: article.comments });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+router.post('/:id/comment/:commentId/reply/:replyId/like', auth, async (req, res) => {
+    try {
+        const article = await News.findById(req.params.id);
+        if (!article) return res.status(404).json({ message: 'Article not found' });
+
+        const comment = article.comments.id(req.params.commentId);
+        if (!comment) return res.status(404).json({ message: 'Comment not found' });
+
+        const reply = comment.replies.id(req.params.replyId);
+        if (!reply) return res.status(404).json({ message: 'Reply not found' });
+
+        const userId = req.user._id;
+        const index = reply.likes.indexOf(userId);
+        if (index === -1) {
+            reply.likes.push(userId);
+        } else {
+            reply.likes.splice(index, 1);
+        }
+
+        await article.save();
+        res.json({ comments: article.comments });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
 router.get('/:id', async (req, res) => {
     try {
         const article = await News.findById(req.params.id).select('likes comments');
