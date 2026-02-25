@@ -367,6 +367,11 @@ nav {
   color: var(--primary);
 }
 
+.nav-weather-location {
+  font-weight: 500;
+  opacity: 0.9;
+}
+
 body.light-mode .nav-weather {
   background: rgba(0, 0, 0, 0.06);
   color: var(--dark);

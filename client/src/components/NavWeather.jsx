@@ -56,22 +56,27 @@ export default function NavWeather() {
   }
 
   const getWeatherIcon = (code) => {
-    if (code === 0) return '☀️'
-    if (code <= 3) return '🌤️'
-    if (code <= 48) return '🌫️'
-    if (code <= 67) return '🌧️'
-    if (code <= 77) return '❄️'
-    if (code <= 82) return '🌧️'
-    if (code <= 86) return '❄️'
-    if (code <= 99) return '⚡'
+    // WMO Weather interpretation codes (WW)
+    if (code === 0) return '☀️' // Clear sky
+    if (code === 1) return '🌤️' // Mainly clear
+    if (code === 2) return '⛅' // Partly cloudy
+    if (code === 3) return '☁️' // Overcast
+    if (code <= 48) return '🌫️' // Fog
+    if (code <= 55) return '🌦️' // Drizzle
+    if (code <= 67) return '🌧️' // Rain
+    if (code <= 77) return '❄️' // Snow
+    if (code <= 82) return '🌧️' // Rain showers
+    if (code <= 86) return '❄️' // Snow showers
+    if (code <= 99) return '⚡' // Thunderstorm
     return '☀️'
   }
 
   if (loading) return null
 
   return (
-    <div className="nav-weather" title={weather.location}>
+    <div className="nav-weather" title={`${weather.location}: ${weather.temp}`}>
       <span className="nav-weather-icon">{weather.icon}</span>
+      <span className="nav-weather-location">{weather.location}</span>
       <span className="nav-weather-temp">{weather.temp}</span>
     </div>
   )
