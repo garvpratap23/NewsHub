@@ -165,7 +165,7 @@ function AppContent() {
       <BackToTop />
       <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} onNavClick={handleNavClick} />
       <Toast message={toastMessage} visible={toastVisible} />
-      <ArticleModal data={articleModalData} onClose={closeArticle} showToast={showToast} />
+      <ArticleModal key={articleModalData?.id || articleModalData?._id || 'none'} data={articleModalData} onClose={closeArticle} showToast={showToast} />
       {!isAuthPage && <Chatbot articleContext={articleModalData || currentViewArticle} />}
     </>
   )

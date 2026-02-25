@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAuth } from '../context/AuthContext'
 import CommentsSection from './CommentsSection'
 
@@ -9,7 +9,30 @@ export default function ArticleModal({ data, onClose, showToast }) {
   const [bookmarked, setBookmarked] = useState(false)
   const [showComments, setShowComments] = useState(false)
   const [comments, setComments] = useState([])
+
+  // TTS states
+  const [ttsOpen, setTtsOpen] = useState(false)
   const [speaking, setSpeaking] = useState(false)
+  const [paused, setPaused] = useState(false)
+  const [ttsProgress, setTtsProgress] = useState(0)
+  const [ttsSpeed, setTtsSpeed] = useState(1)
+  const [showSpeedMenu, setShowSpeedMenu] = useState(false)
+
+  const ttsTextRef = useRef('')
+  const ttsIntervalRef = useRef(null)
+  const ttsStartTimeRef = useRef(0)
+  const ttsDurationRef = useRef(0)
+  const ttsPausedAtRef = useRef(0)
+  const utteranceRef = useRef(null)
+  const isDraggingRef = useRef(false)
+
+  // Cleanup on unmount or when data changes
+  useEffect(() => {
+    return () => {
+      window.speechSynthesis.cancel()
+      if (ttsIntervalRef.current) clearInterval(ttsIntervalRef.current)
+    }
+  }, [data?._id, data?.id])
 
   if (!data) return null
 
@@ -44,28 +67,6 @@ export default function ArticleModal({ data, onClose, showToast }) {
     } catch (err) { }
   }
 
-  const handleComment = async () => {
-    if (!token) { if (showToast) showToast('Login to comment'); return }
-    if (!commentText.trim()) return
-    if (!data._id) {
-      setComments(prev => [...prev, { userName: user?.name || 'You', text: commentText, createdAt: new Date() }])
-      setCommentText('')
-      if (showToast) showToast('Comment added!')
-      return
-    }
-    try {
-      const res = await fetch(`/api/engage/${data._id}/comment`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: commentText })
-      })
-      const d = await res.json()
-      setComments(d.comments || [])
-      setCommentText('')
-      if (showToast) showToast('Comment added!')
-    } catch (err) { }
-  }
-
   const handleShare = async () => {
     const url = window.location.origin + (data._id ? `/view/${data._id}` : '/')
     const text = data.title || 'Check out this article'
@@ -77,23 +78,162 @@ export default function ArticleModal({ data, onClose, showToast }) {
     }
   }
 
-  const toggleTTS = () => {
-    if (speaking) {
-      window.speechSynthesis.cancel()
+  // --- TTS Player Logic ---
+  const getTTSText = useCallback(() => {
+    if (!data) return ''
+    return `${data.title}. ${data.content || data.excerpt}`
+  }, [data])
+
+  const estimateDuration = (text, rate) => {
+    const words = text.split(/\s+/).length
+    return (words / (150 * rate)) * 60 // seconds
+  }
+
+  const startProgressTracker = (duration, startFrom = 0) => {
+    clearInterval(ttsIntervalRef.current)
+    ttsStartTimeRef.current = Date.now() - (startFrom * 1000)
+    ttsDurationRef.current = duration
+
+    ttsIntervalRef.current = setInterval(() => {
+      if (isDraggingRef.current) return
+      const elapsed = (Date.now() - ttsStartTimeRef.current) / 1000
+      const pct = Math.min((elapsed / duration) * 100, 100)
+      setTtsProgress(pct)
+      if (pct >= 100) clearInterval(ttsIntervalRef.current)
+    }, 100)
+  }
+
+  const handleTTSPlay = () => {
+    if (speaking && !paused) {
+      window.speechSynthesis.pause()
+      setPaused(true)
+      clearInterval(ttsIntervalRef.current)
+      const elapsed = (Date.now() - ttsStartTimeRef.current) / 1000
+      ttsPausedAtRef.current = elapsed
+      return
+    }
+
+    if (speaking && paused) {
+      window.speechSynthesis.resume()
+      setPaused(false)
+      startProgressTracker(ttsDurationRef.current, ttsPausedAtRef.current)
+      return
+    }
+
+    const text = getTTSText()
+    if (!text) return
+    ttsTextRef.current = text
+    speakFromPosition(0, ttsSpeed)
+  }
+
+  const speakFromPosition = (progressPct, rate) => {
+    window.speechSynthesis.cancel()
+    clearInterval(ttsIntervalRef.current)
+
+    const text = ttsTextRef.current || getTTSText()
+    if (!text) return
+
+    const startChar = Math.floor((progressPct / 100) * text.length)
+    const textToSpeak = text.substring(startChar)
+
+    if (!textToSpeak.trim()) {
       setSpeaking(false)
-    } else {
-      const utterance = new SpeechSynthesisUtterance(
-        `${data.title}. ${data.content || data.excerpt}`
-      )
-      utterance.rate = 0.95
-      utterance.onend = () => setSpeaking(false)
-      window.speechSynthesis.speak(utterance)
+      setPaused(false)
+      setTtsProgress(100)
+      return
+    }
+
+    const utterance = new SpeechSynthesisUtterance(textToSpeak)
+    utterance.rate = rate
+    utteranceRef.current = utterance
+
+    const totalDuration = estimateDuration(text, rate)
+    const startSeconds = (progressPct / 100) * totalDuration
+
+    utterance.onstart = () => {
       setSpeaking(true)
+      setPaused(false)
+      setTtsOpen(true)
+      startProgressTracker(totalDuration, startSeconds)
+    }
+
+    utterance.onend = () => {
+      setSpeaking(false)
+      setPaused(false)
+      setTtsProgress(100)
+      clearInterval(ttsIntervalRef.current)
+    }
+
+    utterance.onerror = () => {
+      setSpeaking(false)
+      setPaused(false)
+      clearInterval(ttsIntervalRef.current)
+    }
+
+    window.speechSynthesis.speak(utterance)
+    setSpeaking(true)
+  }
+
+  const handleTTSStop = () => {
+    window.speechSynthesis.cancel()
+    clearInterval(ttsIntervalRef.current)
+    setSpeaking(false)
+    setPaused(false)
+    setTtsProgress(0)
+    setTtsOpen(false)
+  }
+
+  const handleSliderDragStart = () => {
+    isDraggingRef.current = true
+  }
+
+  const handleSliderChange = (e) => {
+    const val = parseFloat(e.target.value)
+    setTtsProgress(val)
+  }
+
+  const handleSliderCommit = (e) => {
+    isDraggingRef.current = false
+    const val = parseFloat(e.target.value)
+    if (speaking || paused) {
+      speakFromPosition(val, ttsSpeed)
+    } else {
+      setTtsProgress(val)
     }
   }
 
+  const handleSpeedChange = (speed) => {
+    setTtsSpeed(speed)
+    setShowSpeedMenu(false)
+    if (speaking || paused) {
+      speakFromPosition(ttsProgress, speed)
+    }
+  }
+
+  const toggleTTSPanel = () => {
+    if (ttsOpen) {
+      handleTTSStop()
+    } else {
+      ttsTextRef.current = getTTSText()
+      setTtsOpen(true)
+    }
+  }
+
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60)
+    const s = Math.floor(seconds % 60)
+    return `${m}:${s.toString().padStart(2, '0')}`
+  }
+
+  const totalDuration = data ? estimateDuration(getTTSText(), ttsSpeed) : 0
+  const currentTime = (ttsProgress / 100) * totalDuration
+  const speedOptions = [0.5, 0.75, 1, 1.25, 1.5, 2]
+
   return (
-    <div className={`article-modal${data ? ' active' : ''}`}>
+    <div
+      className={`article-modal${data ? ' active' : ''}`}
+      style={data ? { opacity: 1, visibility: 'visible', pointerEvents: 'auto' } : {}}
+    >
       <button className="article-modal-close" onClick={() => { window.speechSynthesis.cancel(); setSpeaking(false); onClose() }}>&times;</button>
       <div className="article-modal-content">
         <img
@@ -151,11 +291,72 @@ export default function ArticleModal({ data, onClose, showToast }) {
             <i className="fas fa-share-alt" />
             <span>Share</span>
           </button>
-          <button className={`engage-btn ${speaking ? 'active' : ''}`} onClick={toggleTTS}>
-            <i className={speaking ? 'fas fa-stop' : 'fas fa-volume-up'} />
-            <span>{speaking ? 'Stop' : 'Listen'}</span>
+          <button className={`engage-btn ${ttsOpen ? 'active' : ''}`} onClick={toggleTTSPanel}>
+            <i className={ttsOpen ? 'fas fa-stop' : 'fas fa-volume-up'} />
+            <span>{ttsOpen ? 'Stop' : 'Listen'}</span>
           </button>
         </div>
+
+        {/* TTS Player */}
+        {ttsOpen && (
+          <div className="tts-player">
+            <div className="tts-player-header">
+              <i className="fas fa-headphones" />
+              <span className="tts-player-title">Audio Player</span>
+            </div>
+
+            <div className="tts-controls-row">
+              <button className="tts-play-btn" onClick={handleTTSPlay}>
+                <i className={speaking && !paused ? 'fas fa-pause' : 'fas fa-play'} />
+              </button>
+
+              <div className="tts-slider-wrapper">
+                <input
+                  type="range"
+                  className="tts-slider"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  value={ttsProgress}
+                  onChange={handleSliderChange}
+                  onMouseDown={handleSliderDragStart}
+                  onTouchStart={handleSliderDragStart}
+                  onMouseUp={handleSliderCommit}
+                  onTouchEnd={handleSliderCommit}
+                />
+                <div className="tts-slider-fill" style={{ width: `${ttsProgress}%` }} />
+              </div>
+
+              <span className="tts-time">
+                {formatTime(currentTime)} / {formatTime(totalDuration)}
+              </span>
+            </div>
+
+            <div className="tts-bottom-row">
+              <div className="tts-speed-wrapper">
+                <button className="tts-speed-btn" onClick={() => setShowSpeedMenu(!showSpeedMenu)}>
+                  <i className="fas fa-tachometer-alt" /> {ttsSpeed}×
+                </button>
+                {showSpeedMenu && (
+                  <div className="tts-speed-menu">
+                    {speedOptions.map(s => (
+                      <button
+                        key={s}
+                        className={`tts-speed-option ${ttsSpeed === s ? 'active' : ''}`}
+                        onClick={() => handleSpeedChange(s)}
+                      >
+                        {s}×
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <button className="tts-stop-btn" onClick={handleTTSStop}>
+                <i className="fas fa-stop" /> Stop
+              </button>
+            </div>
+          </div>
+        )}
 
         {showComments && (
           <CommentsSection
